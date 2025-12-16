@@ -1,0 +1,1009 @@
+{% extends "serviutemplate/index.html" %}
+{% load static %}
+
+{% block contenido %}
+<section class="hero-section bg-white">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid bg-white shadow-box">
+            <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+                <img src="{%static "logo.png" %}" alt="" class="logo" style="cursor: pointer;">
+            </a>
+            <div class="text-logo">
+                <a class="navbar-brand" href="{% url 'dashboard' %}" style="text-decoration: none;">SERVIU</a>
+                <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+                    <p class="d-block mb-0" style="cursor: pointer;">Región de Ñuble</p>
+                </a>
+            </div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center text-center" id="navbarSupportedContent">
+
+                <!-- menú principal -->
+                <ul class="navbar-nav m-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{% url 'dashboard' %}">Dashboard</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'beneficiarios' %}">
+                            Lista beneficiarios
+                        </a>
+                    </li>
+
+                    {% if user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'nlp_dashboard' %}">
+                            Análisis NLP
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <!-- ### BLOQUE DE USUARIO DENTRO DEL COLLAPSE ### -->
+                <ul class="navbar-nav ms-auto">
+
+                    <!-- Dropdown de usuario -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+
+                            <!-- Imagen solo si está logueado -->
+                            {% if request.user.is_authenticated %}
+                                <img src="{% static 'user.jpg' %}" alt="" class="rounded-circle me-2" width="32" height="32">
+                            {% endif %}
+
+                            <!-- Nombre -->
+                            {% if request.user.is_authenticated %}
+                                {{ request.user.username }}
+                            {% else %}
+                                Invitado
+                            {% endif %}
+                        </a>
+
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+
+                            {% if request.user.is_authenticated %}
+                                <li class="dropdown-item-text">
+                                    <small class="text-muted">Bienvenido</small>
+                                </li>
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+                                    <form method="post" action="{% url 'admin:logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <span class="material-symbols-outlined me-2">logout</span>
+                                            Cerrar sesión
+                                        </button>
+                                    </form>
+                                </li>
+
+                            {% else %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'admin:login' %}">
+                                        <span class="material-symbols-outlined me-2">login</span>
+                                        Iniciar sesión
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                </ul>
+                </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+  </section>
+<div class="container-fluid ps-0">
+    <div class="row">
+        <div class="d-none d-xl-block col-2 pe-0 col-aside">
+            <section class="aside-section">
+                <form method="GET" action="{% url 'filtros' %}">
+                    <aside>
+                        <article class="ano-imputacion">
+                            <h6><span class="material-symbols-outlined">calendar_month</span>Año imputación</h6>
+                            <ul>
+                                <!-- <li class="tag active">2019</li> -->
+                                <li class="tag">
+                                    <input type="checkbox" name="ano_imputacion" value="2019" {% if '2019' in selected_anos %}checked{% endif %}>
+                                    2019
+                                </li>
+                                <li class="tag">
+                                    <input type="checkbox" name="ano_imputacion" value="2020" {% if '2020' in selected_anos %}checked{% endif %}>
+                                    2020
+                                </li>
+                                <li class="tag">
+                                    <input type="checkbox" name="ano_imputacion" value="2021" {% if '2021' in selected_anos %}checked{% endif %}>
+                                    2021
+                                </li>
+                                <li class="tag">
+                                    <input type="checkbox" name="ano_imputacion" value="2022" {% if '2022' in selected_anos %}checked{% endif %}>
+                                    2022
+                                </li>
+                                <li class="tag">
+                                    <input type="checkbox" name="ano_imputacion" value="2023" {% if '2023' in selected_anos %}checked{% endif %}>
+                                    2023
+                                </li>
+                                <li class="tag">
+                                    <input type="checkbox" name="ano_imputacion" value="2024" {% if '2024' in selected_anos %}checked{% endif %}>
+                                    2024
+                                </li>
+                            </ul>
+                        </article>
+                        <article class="provincia">
+                            <h6><span class="material-symbols-outlined">pin_drop</span>Provincia</h6>
+                            <ul>
+                                <!-- <li class="tag active">Diguilin</li> -->
+                                <!-- <li class="tag">Itata</li> -->
+                                <li class="tag">
+                                    <input type="checkbox" name="provincias" value="Diguillín" {% if 'Diguillín' in selected_provincias %}checked{% endif %}>
+                                    Diguilín
+                                </li>
+                                <li class="tag">
+                                    <input type="checkbox" name="provincias" value="Itata" {% if 'Itata' in selected_provincias %}checked{% endif %}>
+                                    Itata
+                                </li>
+                                <li class="tag">
+                                    <input type="checkbox" name="provincias" value="Punilla" {% if 'Punilla' in selected_provincias %}checked{% endif %}>
+                                    Punilla
+                                </li>
+                            </ul>
+                        </article>
+                        <article class="comuna">
+                            <h6><span class="material-symbols-outlined">map</span>Comuna</h6>
+                            <ul>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Bulnes" {% if 'Bulnes' in selected_comunas %}checked{% endif %}>
+                                    <label for="Bulnes">Bulnes</label>
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Chillán" {% if 'Chillán' in selected_comunas %}checked{% endif %}>
+                                    Chillán
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Chillán Viejo" {% if 'Chillán Viejo' in selected_comunas %}checked{% endif %}>
+                                    Chillán Viejo
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Cobquecura" {% if 'Cobquecura' in selected_comunas %}checked{% endif %}>
+                                    Cobquecura
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Coelemu" {% if 'Coelemu' in selected_comunas %}checked{% endif %}>
+                                    Coelemu
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Coihueco" {% if 'Coihueco' in selected_comunas %}checked{% endif %}>
+                                    Coihueco
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="El Carmen" {% if 'El Carmen' in selected_comunas %}checked{% endif %}>
+                                    El Carmen
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Ninhue" {% if 'Ninhue' in selected_comunas %}checked{% endif %}>
+                                    Ninhue
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Pemuco" {% if 'Pemuco' in selected_comunas %}checked{% endif %}>
+                                    Pemuco
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Pinto" {% if 'Pinto' in selected_comunas %}checked{% endif %}>
+                                    Pinto
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Portezuelo" {% if 'Portezuelo' in selected_comunas %}checked{% endif %}>
+                                    Portezuelo
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Quillón" {% if 'Quillón' in selected_comunas %}checked{% endif %}>
+                                    Quillón
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Quirihue" {% if 'Quirihue' in selected_comunas %}checked{% endif %}>
+                                    Quirihue
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Ránquil" {% if 'Ránquil' in selected_comunas %}checked{% endif %}>
+                                    Ránquil
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="San Carlos" {% if 'San Carlos' in selected_comunas %}checked{% endif %}>
+                                    San Carlos
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="San Fabián" {% if 'San Fabián' in selected_comunas %}checked{% endif %}>
+                                    San Fabián
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="San Ignacio" {% if 'San Ignacio' in selected_comunas %}checked{% endif %}>
+                                    San Ignacio
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="San Nicolás" {% if 'San Nicolás' in selected_comunas %}checked{% endif %}>
+                                    San Nicolás
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Trehuaco" {% if 'Trehuaco' in selected_comunas %}checked{% endif %}>
+                                    Trehuaco
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Yungay" {% if 'Yungay' in selected_comunas %}checked{% endif %}>
+                                    Yungay
+                                </li>
+                                <li>
+                                    <input type="checkbox" name="comunas" value="Ñiquén" {% if 'Ñiquén' in selected_comunas %}checked{% endif %}>
+                                    Ñiquén
+                                </li>
+                            </ul>
+                        </article>
+                        <button type="submit" class="btn btn-primary">Filtrar</button>
+                    </aside>
+                </form>
+            </section>
+        </div> 
+
+        <div class="col-10 content">
+            <section class="data-content">
+                <div class="row">
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <article class="decreto shadow-box">
+                            <div class="num-decreto">
+                                DS-1
+                            </div>
+                            <div class="num-total">
+                                <h3>{{ total_count_ds1 }}</h3>
+                                <p class="m-0">Total general</p>
+                            </div>
+                            <span class="material-symbols-outlined chart-btn" data-decreto="DS-1" style="cursor: pointer;">
+                                bar_chart_4_bars
+                            </span>
+                        </article>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <article class="decreto shadow-box">
+                            <div class="num-decreto">
+                                DS-10
+                            </div>
+                            <div class="num-total">
+                                <h3>{{ total_count_ds10 }}</h3>
+                                <p class="m-0">Total general</p>
+                            </div>
+                            <span class="material-symbols-outlined chart-btn" data-decreto="DS-10" style="cursor: pointer;">
+                                bar_chart_4_bars
+                            </span>
+                        </article>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <article class="decreto shadow-box">
+                            <div class="num-decreto">
+                                DS-19
+                            </div>
+                            <div class="num-total">
+                                <h3>{{ pist_ds19 }}</h3>
+                                <p class="m-0">Total general</p>
+                            </div>
+                            <span class="material-symbols-outlined chart-btn" data-decreto="DS-19" style="cursor: pointer;">
+                                bar_chart_4_bars
+                            </span>
+                        </article>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <article class="decreto shadow-box">
+                            <div class="num-decreto">
+                                DS-27
+                            </div>
+                            <div class="num-total">
+                                <h3>{{ total_count_ds27 }}</h3>
+                                <p class="m-0">Total general</p>
+                            </div>
+                            <span class="material-symbols-outlined chart-btn" data-decreto="DS-27" style="cursor: pointer;">
+                                bar_chart_4_bars
+                            </span>
+                        </article>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <article class="decreto shadow-box">
+                            <div class="num-decreto">
+                                DS-49
+                            </div>
+                            <div class="num-total">
+                                <h3>{{ total_count_ds49 }}</h3>
+                                <p class="m-0">Total general</p>
+                            </div>
+                            <span class="material-symbols-outlined chart-btn" data-decreto="DS-49" style="cursor: pointer;">
+                                bar_chart_4_bars
+                            </span>
+                        </article>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <article class="decreto shadow-box">
+                            <div class="num-decreto">
+                                DS-52
+                            </div>
+                            <div class="num-total">
+                                <h3>{{ arriendo_ds52 }}</h3>
+                                <p class="m-0">Total general</p>
+                            </div>
+                            <span class="material-symbols-outlined chart-btn" data-decreto="DS-52" style="cursor: pointer;">
+                                bar_chart_4_bars
+                            </span>
+                        </article>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <article class="decreto shadow-box">
+                            <div class="num-decreto">
+                                DS-255
+                            </div>
+                            <div class="num-total">
+                                <h3>{{ total_count_ds255 }}</h3>
+                                <p class="m-0">Total general</p>
+                            </div>
+                            <span class="material-symbols-outlined chart-btn" data-decreto="DS-255" style="cursor: pointer;">
+                                bar_chart_4_bars
+                            </span>
+                        </article>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <article class="decreto shadow-box">
+                            <div class="num-decreto">
+                                DS-120
+                            </div>
+                            <div class="num-total">
+                                <h3>{{ avc_leasing }}</h3>
+                                <p class="m-0">Total general</p>
+                            </div>
+                            <span class="material-symbols-outlined chart-btn" data-decreto="DS-120" style="cursor: pointer;">
+                                bar_chart_4_bars
+                            </span>
+                        </article>
+                    </div>
+                    <section class="detail-data-content mt-5">
+                        <div class="row">
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                <article class="detail-ds shadow-box">
+                                    <h4>Detalle DS-1</h4>
+                                    <ul>
+                                        {% if ag_ds1 %}
+                                        <li>Arriendo glosa 03 <span>{{ ag_ds1 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if avc_ds1 %}
+                                        <li>AVC <span>{{ avc_ds1 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if csp_ds1 %}
+                                        <li>CSP <span>{{ csp_ds1 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if blanco_ds1 %}
+                                        <li>Conteo de nulos <span>{{ blanco_ds1 }}</span></li> <!-- Conteo de nulos aquí -->
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if total_count_ds1 %}
+                                        <li class="total">Total General <span>{{ total_count_ds1 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                                    </ul>
+                                </article>
+                            </div>
+                            
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                <article class="detail-ds shadow-box">
+                                    <h4>Detalle DS-10</h4>
+                                    <ul>
+                                        {% if cch_ds10 %}
+                                        <li>CCH <span>{{ cch_ds10 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if csr_ds10 %}
+                                        <li>CSR <span>{{ csr_ds10 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if mave_ds10 %}
+                                        <li>MAVE <span>{{ mave_ds10 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if blanco_ds10 %}
+                                        <li>Conteo de nulos <span>{{ blanco_ds10 }}</span></li> <!-- Conteo de nulos aquí -->
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if total_count_ds10 %}
+                                        <li class="total">Total General <span>{{ total_count_ds10 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                                    </ul>
+                                </article>
+                            </div>
+                    
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                <article class="detail-ds shadow-box">
+                                    <h4>Detalle DS-19</h4>
+                                    <ul>
+                                        {% if pist_ds19 %}
+                                        <li>PIST <span>{{ pist_ds19 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if blanco_ds19 %}
+                                        <li>Conteo de nulos <span>{{ blanco_ds19 }}</span></li> <!-- Conteo de nulos aquí -->
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if total_count_ds19 %}
+                                        <li class="total">Total General <span>{{ total_count_ds19 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                                    </ul>
+                                </article>
+                            </div>
+                    
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                <article class="detail-ds shadow-box">
+                                    <h4>Detalle DS-27</h4>
+                                    <ul>
+                                        {% if cap1_ds27 %}
+                                        <li>CAP I <span>{{ cap1_ds27 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if cap2_ds27 %}
+                                        <li>CAP II <span>{{ cap2_ds27 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if cap3_ds27 %}
+                                        <li>CAP III <span>{{ cap3_ds27 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if blanco_ds27 %}
+                                        <li>Conteo de nulos <span>{{ blanco_ds27 }}</span></li> <!-- Conteo de nulos aquí -->
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if total_count_ds27 %}
+                                        <li class="total">Total General <span>{{ total_count_ds27 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                                    </ul>
+                                </article>
+                            </div>
+                    
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                <article class="detail-ds shadow-box">
+                                    <h4>Detalle DS-49</h4>
+                                    <ul>
+                                        {% if avc_ds49 %}
+                                        <li>AVC <span>{{ avc_ds49 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if cnt_ds49 %}
+                                        <li>CNT <span>{{ cnt_ds49 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if cnti_ds49 %}
+                                        <li>CNT INDUST <span>{{ cnti_ds49 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if csp_ds49 %}
+                                        <li>CSP <span>{{ csp_ds49 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if blanco_ds49 %}
+                                        <li>Conteo de nulos <span>{{ blanco_ds49 }}</span></li> <!-- Conteo de nulos aquí -->
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if total_count_ds49 %}
+                                        <li class="total">Total General <span>{{ total_count_ds49 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                                    </ul>
+                                </article>
+                            </div>
+                    
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                <article class="detail-ds shadow-box">
+                                    <h4>Detalle DS-52</h4>
+                                    <ul>
+                                        {% if arriendo_ds52 %}
+                                        <li>Arriendo <span>{{ arriendo_ds52 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if blanco_ds52 %}
+                                        <li>Conteo de nulos <span>{{ blanco_ds52 }}</span></li> <!-- Conteo de nulos aquí -->
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if total_count_ds52 %}
+                                        <li class="total">Total General <span>{{ total_count_ds52 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                                    </ul>
+                                </article>
+                            </div>
+                    
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                <article class="detail-ds shadow-box">
+                                    <h4>Detalle DS-255</h4>
+                                    <ul>
+                                        {% if calefactor_ds255 %}
+                                        <li>Calefactor <span>{{ calefactor_ds255 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if ccss_ds255 %}
+                                        <li>CCSS <span>{{ ccss_ds255 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if colector_ds255 %}
+                                        <li>Colector <span>{{ colector_ds255 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if fotov_ds255 %}
+                                        <li>Fotovoltaico <span>{{ fotov_ds255 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if blanco_ds255 %}
+                                        <li>Conteo de nulos <span>{{ blanco_ds255 }}</span></li> <!-- Conteo de nulos aquí -->
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                    
+                                        {% if total_count_ds255 %}
+                                        <li class="total">Total General <span>{{ total_count_ds255 }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+                                    </ul>
+                                </article>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                                <article class="detail-ds shadow-box">
+                                    <h4>Detalle DS-120</h4>
+                                    <ul>
+                                        {% if avc_leasing %}
+                                        <li>AVC<span>{{ avc_leasing }}</span></li>
+                                        {% else %}
+                                        <li>No hay datos disponibles</li>
+                                        {% endif %}
+    
+                                        <li class="total">Total General <span>{{ avc_leasing }}</span></li>
+                                    </ul>
+                                </article>
+                            </div>
+                        </div>
+                    </section>
+
+            <button type="button" class="btn btn-primary float-filter-button d-lg-none" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                <span class="material-symbols-outlined">
+                    filter_alt
+                    </span>
+            </button>
+
+
+            <!-- Modal -->
+            <div class="modal fade d-lg-none" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Filtrar datos</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                    
+                        <section class="aside-section">
+                            <form method="GET" action="{% url 'filtros' %}">
+                                <aside>
+                                    <article class="ano-imputacion">
+                                        <h6><span class="material-symbols-outlined">calendar_month</span>Año imputación</h6>
+                                        <ul>
+                                            <!-- <li class="tag active">2019</li> -->
+                                            <li class="tag">
+                                                <input type="checkbox" name="ano_imputacion" value="2019" {% if '2019' in selected_anos %}checked{% endif %}>
+                                2019
+                            </li>
+                            <li class="tag">
+                                <input type="checkbox" name="ano_imputacion" value="2020" {% if '2020' in selected_anos %}checked{% endif %}>
+                                2020
+                            </li>
+                            <li class="tag">
+                                <input type="checkbox" name="ano_imputacion" value="2021" {% if '2021' in selected_anos %}checked{% endif %}>
+                                2021
+                            </li>
+                            <li class="tag">
+                                <input type="checkbox" name="ano_imputacion" value="2022" {% if '2022' in selected_anos %}checked{% endif %}>
+                                2022
+                            </li>
+                            <li class="tag">
+                                <input type="checkbox" name="ano_imputacion" value="2023" {% if '2023' in selected_anos %}checked{% endif %}>
+                                2023
+                            </li>
+                            <li class="tag">
+                                <input type="checkbox" name="ano_imputacion" value="2024" {% if '2024' in selected_anos %}checked{% endif %}>
+                                2024
+                                            </li>
+                                        </ul>
+                                    </article>
+                                    <article class="provincia">
+                                        <h6><span class="material-symbols-outlined">pin_drop</span>Provincia</h6>
+                                        <ul>
+                                            <!-- <li class="tag active">Diguilin</li> -->
+                                            <!-- <li class="tag">Itata</li> -->
+                                            <li class="tag">
+                                                <input type="checkbox" name="provincias" value="Diguillín" {% if 'Diguillín' in selected_provincias %}checked{% endif %}>
+                                                Diguilín
+                                            </li>
+                                            <li class="tag">
+                                                <input type="checkbox" name="provincias" value="Itata" {% if 'Itata' in selected_provincias %}checked{% endif %}>
+                                                Itata
+                                            </li>
+                                            <li class="tag">
+                                                <input type="checkbox" name="provincias" value="Punilla" {% if 'Punilla' in selected_provincias %}checked{% endif %}>
+                                                Punilla
+                                            </li>
+                                        </ul>
+                                    </article>
+                                    <article class="comuna">
+                                        <h6><span class="material-symbols-outlined">map</span>Comuna</h6>
+                                        <ul>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Bulnes" {% if 'Bulnes' in selected_comunas %}checked{% endif %}>
+                                                <label for="Bulnes">Bulnes</label>
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Chillán" {% if 'Chillán' in selected_comunas %}checked{% endif %}>
+                                                Chillán
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Chillán Viejo" {% if 'Chillán Viejo' in selected_comunas %}checked{% endif %}>
+                                                Chillán Viejo
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Cobquecura" {% if 'Cobquecura' in selected_comunas %}checked{% endif %}>
+                                                Cobquecura
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Coelemu" {% if 'Coelemu' in selected_comunas %}checked{% endif %}>
+                                                Coelemu
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Coihueco" {% if 'Coihueco' in selected_comunas %}checked{% endif %}>
+                                                Coihueco
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="El Carmen" {% if 'El Carmen' in selected_comunas %}checked{% endif %}>
+                                                El Carmen
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Ninhue" {% if 'Ninhue' in selected_comunas %}checked{% endif %}>
+                                                Ninhue
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Pemuco" {% if 'Pemuco' in selected_comunas %}checked{% endif %}>
+                                                Pemuco
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Pinto" {% if 'Pinto' in selected_comunas %}checked{% endif %}>
+                                                Pinto
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Portezuelo" {% if 'Portezuelo' in selected_comunas %}checked{% endif %}>
+                                                Portezuelo
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Quillón" {% if 'Quillón' in selected_comunas %}checked{% endif %}>
+                                                Quillón
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Quirihue" {% if 'Quirihue' in selected_comunas %}checked{% endif %}>
+                                                Quirihue
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Ránquil" {% if 'Ránquil' in selected_comunas %}checked{% endif %}>
+                                                Ránquil
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="San Carlos" {% if 'San Carlos' in selected_comunas %}checked{% endif %}>
+                                                San Carlos
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="San Fabián" {% if 'San Fabián' in selected_comunas %}checked{% endif %}>
+                                                San Fabián
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="San Ignacio" {% if 'San Ignacio' in selected_comunas %}checked{% endif %}>
+                                                San Ignacio
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="San Nicolás" {% if 'San Nicolás' in selected_comunas %}checked{% endif %}>
+                                                San Nicolás
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Trehuaco" {% if 'Trehuaco' in selected_comunas %}checked{% endif %}>
+                                                Trehuaco
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Yungay" {% if 'Yungay' in selected_comunas %}checked{% endif %}>
+                                                Yungay
+                                            </li>
+                                            <li>
+                                                <input type="checkbox" name="comunas" value="Ñiquén" {% if 'Ñiquén' in selected_comunas %}checked{% endif %}>
+                                                Ñiquén
+                                            </li>
+                                        </ul>
+                                    </article>
+                                </aside>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                                </div>
+                            </form>
+                        </section>
+
+                    </div>
+                </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar gráficos -->
+<div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="chartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="chartModalLabel">Gráfico de Distribución</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <canvas id="chartCanvas" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Función para mostrar gráficos con manejo de errores mejorado
+function initializeCharts() {
+    console.log('Inicializando gráficos...');
+    
+    // Verificar dependencias
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no está cargado');
+        return;
+    }
+    
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap no está cargado');
+        return;
+    }
+    
+    const chartButtons = document.querySelectorAll('.chart-btn');
+    console.log('Botones de gráficos encontrados:', chartButtons.length);
+    
+    if (chartButtons.length === 0) {
+        console.warn('No se encontraron botones de gráficos');
+        return;
+    }
+    
+    let currentChart = null;
+    
+    chartButtons.forEach((button, index) => {
+        console.log(`Configurando botón ${index + 1}:`, button.getAttribute('data-decreto'));
+        
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            
+            const decreto = this.getAttribute('data-decreto');
+            console.log('Click en gráfico:', decreto);
+            
+            // Obtener filtros actuales de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const filterParams = urlParams.toString();
+            console.log('Parámetros de filtro:', filterParams);
+            
+            // Construir URL para obtener datos del gráfico
+               const chartUrl = filterParams 
+                ? `/serviuapp/chart_data/${decreto}/?${filterParams}` 
+                : `/serviuapp/chart_data/${decreto}/`;
+            console.log('URL del gráfico:', chartUrl);
+            // Mostrar indicador de carga
+            const loadingHtml = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+            const modalBody = document.querySelector('#chartModal .modal-body');
+            if (modalBody) {
+                modalBody.innerHTML = loadingHtml;
+            }
+            
+            // Mostrar modal inmediatamente
+            const modal = new bootstrap.Modal(document.getElementById('chartModal'));
+            modal.show();
+            
+            // Hacer petición AJAX
+            fetch(chartUrl)
+                .then(response => {
+                    console.log('Respuesta recibida:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Datos del gráfico:', data);
+                    
+                    // Restaurar contenido del modal
+                    modalBody.innerHTML = '<canvas id="chartCanvas" width="400" height="200"></canvas>';
+                    
+                    // Destruir gráfico anterior si existe
+                    if (currentChart) {
+                        currentChart.destroy();
+                        console.log('Gráfico anterior destruido');
+                    }
+                    
+                    // Crear nuevo gráfico
+                    const canvas = document.getElementById('chartCanvas');
+                    if (!canvas) {
+                        throw new Error('Canvas no encontrado');
+                    }
+                    
+                    const ctx = canvas.getContext('2d');
+                    currentChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.labels || [],
+                            datasets: [{
+                                data: data.data || [],
+                                backgroundColor: [
+                                    '#FF6384',
+                                    '#36A2EB', 
+                                    '#FFCE56',
+                                    '#4BC0C0',
+                                    '#9966FF',
+                                    '#FF9F40',
+                                    '#FF6B6B',
+                                    '#4ECDC4'
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: data.title || `Distribución ${decreto}`,
+                                    font: {
+                                        size: 16,
+                                        weight: 'bold'
+                                    }
+                                },
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        usePointStyle: true
+                                    }
+                                }
+                            },
+                            layout: {
+                                padding: 20
+                            }
+                        }
+                    });
+                    
+                    console.log('Gráfico creado exitosamente');
+                    
+                    // Actualizar título del modal
+                    const modalTitle = document.getElementById('chartModalLabel');
+                    if (modalTitle) {
+                        modalTitle.textContent = data.title || `Distribución ${decreto}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar datos del gráfico:', error);
+                    
+                    // Mostrar error en el modal
+                    modalBody.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            <h4 class="alert-heading">Error al cargar el gráfico</h4>
+                            <p>${error.message}</p>
+                            <hr>
+                            <p class="mb-0">Por favor, intenta nuevamente o contacta al administrador.</p>
+                        </div>
+                    `;
+                });
+        });
+    });
+    
+    console.log('Gráficos inicializados correctamente');
+}
+
+// Función para manejar el comportamiento del botón filtrar
+function handleFilterButton() {
+    const filterForms = document.querySelectorAll('form[action*="filtros"]');
+    
+    filterForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+            const checkedBoxes = form.querySelectorAll('input[type="checkbox"]:checked');
+            
+            // Si no hay checkboxes marcados, redirigir a home
+            if (checkedBoxes.length === 0) {
+                e.preventDefault();
+                window.location.href = '{% url 'dashboard' %}';
+            }
+        });
+    });
+}
+
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+        handleFilterButton();
+    });
+} else {
+    initializeCharts();
+    handleFilterButton();
+}
+</script>
+
+{% endblock %}

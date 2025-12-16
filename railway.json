@@ -1,0 +1,7 @@
+{
+  "deploy": {
+    "start_command": "gunicorn --workers 3 --timeout 5000 serviu.wsgi:application",
+    "healthcheck_path": "/healthcheck/",
+    "healthcheck_timeout": 10
+  }
+}

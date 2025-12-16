@@ -1,0 +1,43 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Subir archivo para importación</h1>
+
+<form id="uploadForm" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" id="fileInput" name="file">
+    <button type="button" onclick="uploadFile()">Subir archivo</button>
+</form>
+
+<div id="progressBar" style="display:none;">
+    <p>Subiendo archivo... <span id="progressPercent">0%</span></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        document.getElementById('progressBar').style.display = 'block';
+
+        axios.post("{% url 'admin:upload-file' %}", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            onUploadProgress: function(progressEvent) {
+                let percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                document.getElementById('progressPercent').innerText = percentCompleted + '%';
+            }
+        })
+        .then(function(response) {
+            alert('Archivo subido exitosamente');
+            location.reload();  // Recarga la página para mantener el estado del admin
+        })
+        .catch(function(error) {
+            console.error('Error al subir archivo:', error);
+        });
+    }
+</script>
+{% endblock %}

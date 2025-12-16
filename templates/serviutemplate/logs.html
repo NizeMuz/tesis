@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logs del Sistema</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .log-entry {
+            font-size: 0.9em;
+            background-color: #efefef;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;  /* Preserva los saltos de línea */
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+        <h1>Logs del Sistema</h1>
+        {% if log_content %}
+            {% for line in log_content %}
+                <div class="log-entry">{{ line }}</div>
+            {% endfor %}
+        {% else %}
+            <p>No hay logs disponibles.</p>
+        {% endif %}
+    </div>
+</body>
+<script>
+  setTimeout(function () {
+    location.reload();
+  }, 15000);
+
+  function scrollToBottom(){
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+  
+  window.onload = scrollToBottom;
+
+</script>
+</html>

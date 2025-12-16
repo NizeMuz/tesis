@@ -1,0 +1,1 @@
+web: bash -c "mkdir -p logs && python manage.py collectstatic --noinput && gunicorn --workers 4 --timeout 4000 serviu.wsgi --log-file logs/gunicorn.log --access-logfile logs/gunicorn_access.log --error-logfile logs/gunicorn_error.log"

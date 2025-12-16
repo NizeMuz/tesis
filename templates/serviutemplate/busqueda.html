@@ -1,0 +1,275 @@
+{% extends "serviutemplate/index.html" %} {% load static %} 
+
+{% block contenido %}
+<section class="hero-section bg-white">
+  <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid bg-white shadow-box">
+            <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+                <img src="{%static "logo.png" %}" alt="" class="logo" style="cursor: pointer;">
+            </a>
+            <div class="text-logo">
+                <a class="navbar-brand" href="{% url 'dashboard' %}" style="text-decoration: none;">SERVIU</a>
+                <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+                    <p class="d-block mb-0" style="cursor: pointer;">Región de Ñuble</p>
+                </a>
+           </div>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div
+        class="collapse navbar-collapse justify-content-center text-center"
+        id="navbarSupportedContent"
+      >
+        <ul class="navbar-nav m-auto">
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="{% url 'dashboard' %}">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="{% url 'beneficiarios' %}">Lista beneficiarios</a>
+          </li>
+          </li>
+                  {% if user.is_staff %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'nlp_dashboard' %}">
+                        Análisis NLP</a>
+                  </li>
+                  {% endif %}
+        </ul>
+        <div
+          class="article-user d-flex align-items-center justify-content-center d-none d-lg-flex"
+        >
+          <img src="{%static "user.jpg" %}" alt="">
+          <div class="datos-user d-inline-block text-start">
+            <p>
+              {% if request.user.is_authenticated %} {{ request.user.username }}
+              {% else %} {{ "Invitado" }} {% endif %}
+            </p>
+            <p>
+              {% if request.user.is_authenticated %} {{ request.user.groups.first }} {% else %} 
+              {{ "Usuario no encontrado" }} 
+              {% endif %}
+            </p>
+          </div>
+          <div class="asd">
+            <span class="material-symbols-outlined">keyboard_arrow_down</span>
+            <div class="items-user shadow-box">
+              <ul>
+                {% if request.user.is_authenticated %}
+                <form method="post" action="{% url 'admin:logout' %}">
+                  {% csrf_token %}
+                  <li>
+                    <button type="submit">Cerrar sesión</button>
+                  </li>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'admin:logout' %}">
+                  {% csrf_token %}
+                  <li>
+                    <button type="submit">Inicia sesión</button>
+                  </li>
+                </form>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</section>
+<div class="col-12 col-lg-10 content table-content">
+  <form
+    method="GET"
+    action="{% url 'busqueda' %}"
+    class="form-busqueda d-md-none w-100 mt-120"
+  >
+    <div class="input-group mb-3">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Búsqueda por rut"
+        aria-label="Búsqueda por rut"
+        aria-describedby="button-addon2"
+        name="rut_beneficiario"
+      />
+      <button class="btn btn-primary d-flex" type="submit" id="button-addon2">
+        <span class="material-symbols-outlined"> search </span>
+      </button>
+    </div>
+  </form>
+  <div class="row justify-content-between mt-4">
+    <div class="col-2">
+      <a
+        href="../admin/serviuapp/beneficiarios/import/"
+        class="a_button"
+        id="importarBtn"
+      >
+        <button type="button" class="btn btn-outline-primary d-flex">
+          <span class="material-symbols-outlined" style="margin-top: 2px"
+            >upgrade</span
+          >
+          Importar
+        </button>
+      </a>
+    </div>
+    <script>
+      document
+        .getElementById("importarBtn")
+        .addEventListener("click", function (event) {
+          // Evita la acción predeterminada del enlace
+          event.preventDefault();
+
+          // Abre una nueva pestaña con la URL de los logs
+          window.open("/logs/", "_blank");
+
+          // Redirige a la página de importación
+          window.location.href = "../admin/serviuapp/beneficiarios/import/";
+        });
+    </script>
+    <div class="col-5">
+      <div class="row float-end w-100">
+        <form
+          method="GET"
+          action="{% url 'busqueda' %}"
+          class="form-busqueda d-none d-md-block"
+        >
+          <div class="input-group mb-3">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Búsqueda por rut"
+              aria-label="Búsqueda por rut"
+              aria-describedby="button-addon2"
+              name="rut_beneficiario"
+            />
+            <button
+              class="btn btn-primary d-flex"
+              type="submit"
+              id="button-addon2"
+            >
+              <span class="material-symbols-outlined"> search </span>
+            </button>
+          </div>
+        </form>
+        <a href="anadir_beneficiario/" class="a_button w-100">
+          <button
+            type="button"
+            class="btn btn-outline-primary person_add d-flex justify-content-center w-100"
+          >
+            <span class="material-symbols-outlined" style="margin-top: 2px">
+              person_add
+            </span>
+            Añadir
+          </button>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="table-responsive">
+    {% if datos %}
+    <table class="table">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">id</th>
+          <th scope="col">programa</th>
+          <th scope="col">tipologia</th>
+          <th scope="col">rut</th>
+          <th scope="col">dv</th>
+          <th scope="col">primer y segundo nombre</th>
+          <th scope="col">primer apellido</th>
+          <th scope="col">segundo apellido</th>
+          <th scope="col">comuna</th>
+          <th scope="col">provincia</th>
+          <th scope="col">codigo proyecto</th>
+          <th scope="col">nombre grupo</th>
+          <th scope="col">sexo</th>
+          <th scope="col">numero resolucion</th>
+          <th scope="col">fecha resolucion</th>
+          <th scope="col">seleccion</th>
+          <th scope="col">año imputacion</th>
+          <th scope="col">tramo</th>
+          <th>Editar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dato in datos %}
+        <tr>
+          <th scope="row">{{ dato.0 }}</th>
+          <th>{{ dato.18 }}</th>
+          <th>{{ dato.19 }}</th>
+          <th>{{ dato.1 }}</th>
+          <th>{{ dato.2 }}</th>
+          <th>{{ dato.3 }}</th>
+          <th>{{ dato.4 }}</th>
+          <th>{{ dato.5 }}</th>
+          <th>{{ dato.6 }}</th>
+          <th>{{ dato.7 }}</th>
+          <th>{{ dato.8 }}</th>
+          <th>{{ dato.9 }}</th>
+          <th>{{ dato.10 }}</th>
+          <th>{{ dato.12 }}</th>
+          <th>{{ dato.13 }}</th>
+          <th>{{ dato.14 }}</th>
+          <th>{{ dato.15 }}</th>
+          <th>{{ dato.20 }}</th>
+          <td>
+            {% if request.user.is_authenticated %} 
+            <a href="/beneficiarios/actualizar_beneficiario/{{dato.0}}">
+              <span class="material-symbols-outlined">edit</span>
+            </a>
+            {% else %} 
+             {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>Rut no encontrado</p>
+    {% endif %}
+  </div>
+  <div class="pagination justify-content-end">
+    <span class="step-links">
+      {% if datos.has_previous %}
+      <a href="?page=1">&laquo; Primera</a>
+      <a href="?page={{ datos.previous_page_number }}">Anterior</a>
+      {% endif %}
+
+      <span class="current">
+        Página {{ datos.number }} de {{ datos.paginator.num_pages }}.
+      </span>
+
+      {% if datos.has_next %}
+      <a href="?page={{ datos.next_page_number }}">Siguiente</a>
+      <a href="?page={{ datos.paginator.num_pages }}">Último &raquo;</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+{% endblock %}
+<!-- Agregar información sobre la búsqueda -->
+<div class="row justify-content-between align-items-center mt-3 mb-3">
+  <div class="col-auto">
+    <p class="mb-0 text-muted">
+      {% if search_term %}
+        Resultados para "{{ search_term }}": {{ total_resultados }} beneficiario{{ total_resultados|pluralize }}
+      {% else %}
+        Todos los beneficiarios: {{ total_resultados }}
+      {% endif %}
+    </p>
+  </div>
+  <div class="col-auto">
+    <a href="{% url 'beneficiarios' %}" class="btn btn-outline-secondary btn-sm">
+      <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 5px;">arrow_back</span>
+      Volver a la lista
+    </a>
+  </div>
+</div>

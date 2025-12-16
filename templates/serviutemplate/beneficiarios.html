@@ -1,0 +1,280 @@
+{% extends "serviutemplate/index.html" %} 
+{% load static %} 
+
+{% block contenido %}
+<section class="hero-section bg-white">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid bg-white shadow-box">
+            <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+                <img src="{%static "logo.png" %}" alt="" class="logo" style="cursor: pointer;">
+            </a>
+            <div class="text-logo">
+                <a class="navbar-brand" href="{% url 'dashboard' %}" style="text-decoration: none;">SERVIU</a>
+                <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+                    <p class="d-block mb-0" style="cursor: pointer;">Región de Ñuble</p>
+                </a>
+            </div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center text-center" id="navbarSupportedContent">
+
+                <!-- menú principal -->
+                <ul class="navbar-nav m-auto">
+                    <li class="nav-item">
+                        <a class="nav-link " aria-current="page" href="{% url 'dashboard' %}">Dashboard</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'beneficiarios' %}">Lista beneficiarios</a>
+                    </li>
+
+                    {% if user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'nlp_dashboard' %}">Análisis NLP</a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <!-- ### BLOQUE DE USUARIO DENTRO DEL COLLAPSE ### -->
+                <ul class="navbar-nav ms-auto">
+
+                    <!-- Dropdown de usuario -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+
+                            <!-- Imagen solo si está logueado -->
+                            {% if request.user.is_authenticated %}
+                                <img src="{% static 'user.jpg' %}" alt="" class="rounded-circle me-2" width="32" height="32">
+                            {% endif %}
+
+                            <!-- Nombre -->
+                            {% if request.user.is_authenticated %}
+                                {{ request.user.username }}
+                            {% else %}
+                                Invitado
+                            {% endif %}
+                        </a>
+
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+
+                            {% if request.user.is_authenticated %}
+                                <li class="dropdown-item-text">
+                                    <small class="text-muted">Bienvenido</small>
+                                </li>
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+                                    <form method="post" action="{% url 'admin:logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <span class="material-symbols-outlined me-2">logout</span>
+                                            Cerrar sesión
+                                        </button>
+                                    </form>
+                                </li>
+
+                            {% else %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'admin:login' %}">
+                                        <span class="material-symbols-outlined me-2">login</span>
+                                        Iniciar sesión
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                </ul>
+                </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+</section>
+<div class="col-12 col-lg-10 content table-content">
+  <form method="GET" action="{% url 'busqueda' %}" class="form-busqueda d-md-none w-100 mt-120">
+    <div class="input-group mb-3">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Búsqueda por rut"
+        aria-label="Búsqueda por rut"
+        aria-describedby="button-addon2"
+        name="rut_beneficiario"
+      />
+      <button
+        class="btn btn-primary d-flex"
+        type="submit"
+        id="button-addon2"
+      >
+        <span class="material-symbols-outlined"> search </span>
+      </button>
+    </div>
+  </form>
+  <div class="row justify-content-between mt-4">
+    {% if request.user.is_authenticated %}
+    <div class="col-2">
+      <a href="../admin/serviuapp/beneficiarios/import/" class="a_button">
+        <button type="button" class="btn btn-outline-primary d-flex">
+          <span class="material-symbols-outlined" style="margin-top: 2px">
+            upgrade
+          </span>
+          Importar
+        </button>
+      </a>
+    </div>
+    {% endif %}
+    <div class="col-5">
+      <div class="row float-end w-100">
+        <form method="GET" action="{% url 'busqueda' %}" class="form-busqueda d-none d-md-block">
+          <div class="input-group mb-3">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Búsqueda por rut"
+              aria-label="Búsqueda por rut"
+              aria-describedby="button-addon2"
+              name="rut_beneficiario"
+            />
+            <button
+              class="btn btn-primary d-flex"
+              type="submit"
+              id="button-addon2"
+            >
+              <span class="material-symbols-outlined"> search </span>
+            </button>
+          </div>
+        </form>
+        {% if request.user.is_authenticated %}
+        <a href="anadir_beneficiario/" class="a_button w-100">
+          <button
+            type="button"
+            class="btn btn-outline-primary person_add d-flex justify-content-center w-100"
+          >
+            <span class="material-symbols-outlined" style="margin-top: 2px">
+              person_add
+            </span>
+            Añadir
+          </button>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="table-responsive">
+    {% if datos %}
+    <table class="table">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">id</th>
+          <th scope="col">programa</th>
+          <th scope="col">tipologia</th>
+          <th scope="col">rut</th>
+          <th scope="col">dv</th>
+          <th scope="col">primer y segundo nombre</th>
+          <th scope="col">primer apellido</th>
+          <th scope="col">segundo apellido</th>
+          <th scope="col">comuna</th>
+          <th scope="col">provincia</th>
+          <th scope="col">codigo proyecto</th>
+          <th scope="col">nombre grupo</th>
+          <th scope="col">sexo</th>
+          <th scope="col">numero resolucion</th>
+          <th scope="col">fecha resolucion</th>
+          <th scope="col">seleccion</th>
+          <th scope="col">año imputacion</th>
+          <th scope="col">tramo</th>
+          <th>Editar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dato in datos %}
+        <tr>
+          <th scope="row">{{ dato.0 }}</th>
+          <th>{{ dato.18 }}</th>
+          <th>{{ dato.19 }}</th>
+          <th>{{ dato.1 }}</th>
+          <th>{{ dato.2 }}</th>
+          <th>{{ dato.3 }}</th>
+          <th>{{ dato.4 }}</th>
+          <th>{{ dato.5 }}</th>
+          <th>{{ dato.6 }}</th>
+          <th>{{ dato.7 }}</th>
+          <th>{{ dato.8 }}</th>
+          <th>{{ dato.9 }}</th>
+          <th>{{ dato.10 }}</th>
+          <th>{{ dato.12 }}</th>
+          <th>{{ dato.13 }}</th>
+          <th>{{ dato.14 }}</th>
+          <th>{{ dato.15 }}</th>
+          <td>
+            <td>
+              {% if request.user.is_authenticated %}
+              <a href="/beneficiarios/actualizar_beneficiario/{{dato.0}}">
+                <span class="material-symbols-outlined">edit</span>
+              </a>
+              {% else %}
+              <span class="material-symbols-outlined" style="color: #ccc;" title="Inicia sesión para editar">edit</span>
+              {% endif %}
+            </td>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>cagaste</p>
+    {% endif %}
+  </div>
+  <div class="pagination justify-content-end">
+    <span class="step-links">
+      {% if datos.has_previous %}
+      <a href="?page=1">&laquo; Primera</a>
+      <a href="?page={{ datos.previous_page_number }}">Anterior</a>
+      {% endif %}
+
+      <span class="current">
+        Página {{ datos.number }} de {{ datos.paginator.num_pages }}.
+      </span>
+
+      {% if datos.has_next %}
+      <a href="?page={{ datos.next_page_number }}">Siguiente</a>
+      <a href="?page={{ datos.paginator.num_pages }}">Último &raquo;</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+<div class="row mb-3">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <span>Mostrar: </span>
+        <select id="perPageSelector" onchange="changePerPage()" class="form-select d-inline-block" style="width: auto;">
+          <option value="5" {% if per_page == 5 %}selected{% endif %}>5</option>
+          <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+          <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+          <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+        </select>
+        <span> beneficiarios por página</span>
+      </div>
+      <div>
+        <small class="text-muted">Total: {{ total_beneficiarios }} beneficiarios</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function changePerPage() {
+    const selector = document.getElementById('perPageSelector');
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('per_page', selector.value);
+    currentUrl.searchParams.delete('page'); // Reset to first page
+    window.location.href = currentUrl.toString();
+}
+</script>
+{% endblock %}

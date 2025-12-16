@@ -1,0 +1,34 @@
+<!-- Widget de calificación que se puede incluir en cualquier template -->
+<div class="satisfaction-rating" data-interaction-id="{{ interaction_id }}">
+    <p>¿Te fue útil esta respuesta?</p>
+    <div class="stars">
+        <span class="star" data-rating="1">⭐</span>
+        <span class="star" data-rating="2">⭐</span>
+        <span class="star" data-rating="3">⭐</span>
+        <span class="star" data-rating="4">⭐</span>
+        <span class="star" data-rating="5">⭐</span>
+    </div>
+    <textarea placeholder="Comentarios adicionales (opcional)" class="feedback-text"></textarea>
+    <button onclick="submitRating()">Enviar calificación</button>
+</div>
+
+<script>
+function submitRating() {
+    const rating = document.querySelector('.star.selected')?.dataset.rating;
+    const feedback = document.querySelector('.feedback-text').value;
+    const interactionId = document.querySelector('.satisfaction-rating').dataset.interactionId;
+    
+    fetch('/api/rate-interaction/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            interaction_id: interactionId,
+            rating: rating,
+            feedback: feedback
+        })
+    });
+}
+</script>

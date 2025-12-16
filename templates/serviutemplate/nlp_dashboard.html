@@ -1,0 +1,261 @@
+{% extends 'serviutemplate/index.html' %}
+{% load static %}
+
+{% block estilos %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .nlp-header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block contenido %}
+<!-- Navegación -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">SERVIU Dashboard</a>
+        <div class="navbar-nav">
+            <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+            <a class="nav-link" href="{% url 'beneficiarios' %}">Lista beneficiarios</a>
+            <a class="nav-link active" href="{% url 'nlp_dashboard' %}">Análisis NLP</a>
+        </div>
+        <div class="navbar-nav ms-auto">
+            <span class="navbar-text">Usuario: {{ user.username }}</span>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="nlp-header">
+        <h1><i class="fas fa-brain"></i> Dashboard de Análisis NLP</h1>
+        <p>Análisis inteligente de conversaciones con usuarios</p>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <h3>{{ total_interactions }}</h3>
+                <p>Total Interacciones</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <h3>{{ category_stats|length }}</h3>
+                <p>Categorías Detectadas</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <h3>{{ sentiment_trends.positive }}%</h3>
+                <p>Sentimiento Positivo</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <h3>{{ frequent_patterns|length }}</h3>
+                <p>Palabras Clave</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Gráfico de Categorías -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h4>Consultas por Categoría</h4>
+                <canvas id="categoryChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico de Sentimientos -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h4>Análisis de Sentimientos</h4>
+                <canvas id="sentimentChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Palabras Frecuentes -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="chart-container">
+                <h4>Palabras Más Frecuentes</h4>
+                <canvas id="keywordsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interacciones Recientes -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="chart-container">
+                <h4>Interacciones Recientes</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Pregunta</th>
+                                <th>Categoría</th>
+                                <th>Sentimiento</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for interaction in recent_interactions|slice:":10" %}
+                            <tr>
+                                <td>{{ interaction.0|truncatechars:80 }}</td>
+                                <td><span class="badge bg-primary">{{ interaction.2|default:"Sin categoría" }}</span></td>
+                                <td>
+                                    {% if interaction.3 > 0.1 %}
+                                        <span class="badge bg-success">Positivo</span>
+                                    {% elif interaction.3 < -0.1 %}
+                                        <span class="badge bg-danger">Negativo</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Neutral</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ interaction.5|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No hay interacciones disponibles</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Datos para los gráficos
+const categoryData = {
+    labels: [{% for item in category_stats %}'{{ item.question_category }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for item in category_stats %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384']
+    }]
+};
+
+// Reemplazar bloque de sentimentData y creación del gráfico por lo siguiente:
+const sentimentValues = [
+    parseFloat('{{ sentiment_trends.positive|default:"0" }}'),
+    parseFloat('{{ sentiment_trends.neutral|default:"0" }}'),
+    parseFloat('{{ sentiment_trends.negative|default:"0" }}')
+];
+
+const sentimentData = {
+    labels: ['Positivo', 'Neutral', 'Negativo'],
+    datasets: [{
+        data: sentimentValues,
+        backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+    }]
+};
+
+// Si no hay datos, mostrar mensaje en vez de un pie vacío
+const totalSentiment = sentimentValues.reduce((a, b) => a + b, 0);
+
+if (totalSentiment === 0) {
+    const container = document.getElementById('sentimentChart').parentElement;
+    container.innerHTML = '<div class="text-muted">Sin datos de sentimientos en los últimos 30 días</div>';
+} else {
+    const ctx = document.getElementById('sentimentChart').getContext('2d');
+    const sentimentChart = new Chart(ctx, {
+        type: 'pie',
+        data: sentimentData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.label}: ${context.formattedValue}%`
+                    }
+                }
+            }
+        }
+    });
+}
+
+const keywordsData = {
+    labels: [{% for word, count in frequent_patterns %}'{{ word }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Frecuencia',
+        data: [{% for word, count in frequent_patterns %}{{ count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        backgroundColor: '#36A2EB'
+    }]
+};
+
+// Crear gráficos
+const categoryChart = new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: categoryData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+const sentimentChart = new Chart(document.getElementById('sentimentChart'), {
+    type: 'pie',
+    data: sentimentData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+const keywordsChart = new Chart(document.getElementById('keywordsChart'), {
+    type: 'bar',
+    data: keywordsData,
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
