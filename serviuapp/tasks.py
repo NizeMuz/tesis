@@ -76,6 +76,8 @@ def importar_excel_task(self, archivo_path, usuario_id=None):
         return result
 
     try:
+        import time
+        self.start_time = time.time()  # Para calcular ETA
         logger.info(f"Iniciando importación Celery: {archivo_path}")
 
         # Actualizar estado
@@ -192,8 +194,23 @@ def importar_excel_task(self, archivo_path, usuario_id=None):
                 Resoluciones.objects.bulk_create(resoluciones_objs, ignore_conflicts=True)
                 resoluciones_creadas += len(resoluciones_objs)
 
-            # Actualizar progreso
+            # Actualizar progreso con tiempo estimado
             progress = 30 + int((start_idx / total_filas) * 60)
+
+            # Calcular tiempo estimado restante
+            import time
+            elapsed = time.time() - self.start_time if hasattr(self, 'start_time') else 0
+            if progress > 30 and elapsed > 0:
+                # Progreso real de procesamiento (0-60%)
+                real_progress = (progress - 30) / 60.0
+                if real_progress > 0:
+                    estimated_total = elapsed / real_progress
+                    eta_seconds = int(estimated_total - elapsed)
+                else:
+                    eta_seconds = 0
+            else:
+                eta_seconds = 0
+
             self.update_state(
                 state='PROGRESS',
                 meta={
@@ -201,7 +218,10 @@ def importar_excel_task(self, archivo_path, usuario_id=None):
                     'progress': progress,
                     'beneficiarios': beneficiarios_creados,
                     'decretos': decretos_creados,
-                    'resoluciones': resoluciones_creadas
+                    'resoluciones': resoluciones_creadas,
+                    'eta_seconds': eta_seconds,
+                    'rows_processed': start_idx,
+                    'total_rows': total_filas
                 }
             )
 

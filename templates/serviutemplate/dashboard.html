@@ -860,9 +860,9 @@ function initializeCharts() {
             console.log('Parámetros de filtro:', filterParams);
             
             // Construir URL para obtener datos del gráfico
-               const chartUrl = filterParams 
-                ? `/serviuapp/chart_data/${decreto}/?${filterParams}` 
-                : `/serviuapp/chart_data/${decreto}/`;
+               const chartUrl = filterParams
+                ? `/chart_data/${decreto}/?${filterParams}`
+                : `/chart_data/${decreto}/`;
             console.log('URL del gráfico:', chartUrl);
             // Mostrar indicador de carga
             const loadingHtml = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div></div>';

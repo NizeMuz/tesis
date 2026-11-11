@@ -247,6 +247,14 @@ LOGGING = {
 }
 WSGI_APPLICATION = os.environ.get('WSGI_APPLICATION', 'serviu.wsgi')
 
+# Cache configuration for Celery result backend (django-cache)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'celery-cache',
+    }
+}
+
 # Login settings
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'  # ← Ya está configurado correctamente para redirigir al dashboard
@@ -270,10 +278,12 @@ OLLAMA_MODEL = 'mistral'  # Tu modelo Mistral
 
 CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'True').lower() in ('true', '1', 'yes')
 CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_STORE_EAGER_RESULT = True  # Guardar resultados en modo eager
 
-# Broker y backend - Redis en Docker, memory:// en local eager mode
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'memory://' if CELERY_TASK_ALWAYS_EAGER else 'redis://redis:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'django-db' if CELERY_TASK_ALWAYS_EAGER else 'redis://redis:6379/1')
+# Broker y backend - Usar eager mode para desarrollo sin Redis
+# En producción usar Redis: redis://localhost:6379/0 y redis://localhost:6379/1
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'memory://')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'django-cache')
 
 # Configuración de serialización
 CELERY_ACCEPT_CONTENT = ['json']

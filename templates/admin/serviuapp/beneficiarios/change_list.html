@@ -1,0 +1,12 @@
+{% extends "admin/import_export/change_list_import_export.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block object-tools-items %}
+    <li>
+        <a href="{% url 'admin:serviuapp_beneficiarios_importar_progreso' %}" class="btn btn-primary" style="margin-left: 10px;">
+            <span class="material-symbols-outlined" style="vertical-align: middle;">cloud_upload</span>
+            Importar con Progreso
+        </a>
+    </li>
+    {{ block.super }}
+{% endblock %}
