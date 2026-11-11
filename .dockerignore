@@ -1,0 +1,72 @@
+# Docker ignore para serviuapp
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.venv
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/*.log
+
+# Database
+*.sqlite3
+*.db
+
+# Media/Static (generados en runtime)
+staticfiles/*
+media/*
+tmp/*
+
+# Archivos grandes de datos
+*.xlsx
+*.sql
+*.csv
+
+# Env files (usar .env.example)
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Backup
+backups/
+
+# Node modules (si hay frontend)
+node_modules/
+
+# Otros
+*.pem
+*.key
+*.crt

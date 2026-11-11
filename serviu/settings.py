@@ -28,14 +28,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n2x10c7hb-5_rs5ot3g7!jr-77+t6b+ej4-&*17w@$ur6atd(='
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
+# ALLOWED_HOSTS desde variable de entorno (coma-separados) o default
 ALLOWED_HOSTS = [
-    "maverixti.cl",
-    "www.maverixti.cl",
+    host.strip() for host in os.getenv(
+        'ALLOWED_HOSTS',
+        'localhost,127.0.0.1,0.0.0.0,maverixti.cl,www.maverixti.cl'
+    ).split(',') if host.strip()
 ]
 # Application definition
 
@@ -50,21 +53,29 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'import_export',
+    'django_celery_beat',
+    'django_celery_results',
     'serviuapp'
 ]
 
 IMPORT_EXPORT_USE_TRANSACTIONS = True
 IMPORT_FORMATS = [CSV, XLSX]
+# CSRF/SESSION settings - configurables por entorno
 CSRF_TRUSTED_ORIGINS = [
-    "https://maverixti.cl",
-    "https://www.maverixti.cl",
+    origin.strip() for origin in os.getenv(
+        'CSRF_TRUSTED_ORIGINS',
+        'https://maverixti.cl,https://www.maverixti.cl'
+    ).split(',') if origin.strip()
 ]
+
 CSRF_COOKIE_PATH = "/"
 SESSION_COOKIE_PATH = "/"
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SAMESITE = 'None'
+
+# En desarrollo (DEBUG=True) usar False, en producción True
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SAMESITE = 'Lax' if DEBUG else 'None'
+SESSION_COOKIE_SAMESITE = 'Lax' if DEBUG else 'None'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -101,26 +112,39 @@ WSGI_APPLICATION = 'wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-pymysql.install_as_MySQLdb()
+# Usar SQLite por defecto (archivo db.sqlite3 existente)
+# MySQL disponible via variables de entorno para producción
+USE_MYSQL = os.getenv('USE_MYSQL', 'False').lower() in ('true', '1', 'yes')
 
-DATABASES = {
-    'default': {
-        # 'ENGINE': 'django.db.backends.mysql',
-        # 'NAME': 'serviuapp',
-        # 'USER': 'root',
-        # 'PASSWORD': '',
-        # 'HOST': 'localhost',
-        # 'PORT': '3306'
-
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'maverixt_serviuapp',
-        'USER': 'maverixt_serviuapp',
-        'PASSWORD': 'Sabanamala25!',
-        'HOST': 'localhost',
-        'PORT': '3306'
+if USE_MYSQL:
+    pymysql.install_as_MySQLdb()
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('DATABASE_NAME', 'serviuapp'),
+            'USER': os.getenv('DATABASE_USER', 'root'),
+            'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),
+            'HOST': os.getenv('DATABASE_HOST', 'localhost'),
+            'PORT': os.getenv('DATABASE_PORT', '3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
     }
-    
-}
+else:
+    # SQLite con el archivo existente db.sqlite3
+    # Configuración optimizada para concurrencia (Celery + Web)
+    # Backend personalizado con WAL mode
+    DATABASES = {
+        'default': {
+            'ENGINE': 'serviu.db.backends.sqlite3_wal',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {
+                'timeout': 30,  # segundos
+            },
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -157,11 +181,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-# Static files 
-STATIC_URL = '/serviuapp/static/' 
-STATIC_ROOT = '/home/maverixt/public_html/serviuapp/static/'
- # Si tienes una carpeta "static" dentro del proyecto (para CSS/js propios) 
-STATICFILES_DIRS = [ BASE_DIR / 'static', ]
+# Static files
+STATIC_URL = '/serviuapp/static/'
+# Usar directorio dentro del contenedor para collectstatic
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Si tienes una carpeta "static" dentro del proyecto (para CSS/js propios)
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Media files (uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 
@@ -177,6 +206,16 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Timeouts y límites para importaciones grandes
+DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024  # 200MB (default 2.5MB)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024  # 200MB
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # Más campos permitidos
+
+# Timeout para requests largos (en segundos)
+# Nota: El timeout real depende del servidor web (gunicorn, nginx, etc.)
+# Gunicorn: --timeout 7200
+# Nginx: proxy_read_timeout 7200s;
 # BASE_DIR ya debe estar definido en tu archivo settings.py
 
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
@@ -221,3 +260,70 @@ DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 # Ollama Configuration
 OLLAMA_URL = 'http://localhost:11434'  # URL por defecto de Ollama
 OLLAMA_MODEL = 'mistral'  # Tu modelo Mistral
+
+# ============================================================
+# CELERY CONFIGURATION
+# ============================================================
+# Configuración via variables de entorno para Docker/producción
+# Desarrollo local sin Redis: CELERY_TASK_ALWAYS_EAGER=True
+# Docker/Producción con Redis: CELERY_TASK_ALWAYS_EAGER=False
+
+CELERY_TASK_ALWAYS_EAGER = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'True').lower() in ('true', '1', 'yes')
+CELERY_TASK_EAGER_PROPAGATES = True
+
+# Broker y backend - Redis en Docker, memory:// en local eager mode
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'memory://' if CELERY_TASK_ALWAYS_EAGER else 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'django-db' if CELERY_TASK_ALWAYS_EAGER else 'redis://redis:6379/1')
+
+# Configuración de serialización
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+# Zona horaria
+CELERY_TIMEZONE = 'America/Santiago'
+CELERY_ENABLE_UTC = True
+
+# Resultados
+CELERY_RESULT_EXTENDED = True
+CELERY_RESULT_EXPIRES = 86400  # 24 horas
+
+# Worker - Optimizado para importaciones grandes
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 500  # Reiniciar worker cada 500 tareas para liberar memoria
+CELERY_TASK_SOFT_TIME_LIMIT = 7200  # 2 horas límite suave (aumentado de 30 min)
+CELERY_TASK_TIME_LIMIT = 7800  # 2h 10m límite duro (aumentado de 35 min)
+CELERY_WORKER_DISABLE_RATE_LIMITS = True
+
+# Redis connection pooling
+CELERY_BROKER_POOL_LIMIT = 10
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
+
+# Serialization optimizada
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_COMPRESSION = 'gzip'
+CELERY_RESULT_COMPRESSION = 'gzip'
+
+# Result backend optimizado
+CELERY_RESULT_EXTENDED = True
+CELERY_RESULT_EXPIRES = 86400  # 24 horas
+CELERY_RESULT_BACKEND_ALWAYS_RETRY = True
+CELERY_RESULT_BACKEND_MAX_RETRIES = 10
+
+# Beat (tareas periódicas) - usa django-celery-beat
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Rutas de tareas
+CELERY_TASK_ROUTES = {
+    'serviuapp.tasks.importar_excel_task': {'queue': 'imports'},
+    'serviuapp.tasks.procesar_chat_task': {'queue': 'chat'},
+}
+
+# Configuración de logging para Celery
+CELERY_WORKER_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+CELERY_WORKER_TASK_LOG_FORMAT = '%(asctime)s - %(name)s [%(task_name)s(%(task_id)s)] - %(levelname)s - %(message)s'

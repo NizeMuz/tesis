@@ -1,0 +1,157 @@
+version: '3.8'
+
+# ===========================================
+# Docker Compose para serviuapp (Tesis)
+# Servicios: web, redis, celery-worker, celery-beat
+# Base de datos: SQLite (db.sqlite3 montado como volumen)
+# ===========================================
+
+services:
+  # -----------------------------------------------------------------
+  # Redis (broker para Celery + cache)
+  # -----------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: serviuapp_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - serviuapp_network
+
+  # -----------------------------------------------------------------
+  # Aplicación Web Django
+  # -----------------------------------------------------------------
+  web:
+    build: .
+    container_name: serviuapp_web
+    restart: unless-stopped
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+      - USE_MYSQL=False
+      # --- APIs de IA (opcionales) ---
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - WSGI_APPLICATION=serviu.wsgi
+      # Superusuario automático (opcional, definir en .env)
+      - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-admin}
+      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
+      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
+    volumes:
+      - ./serviu:/app/serviu
+      - ./serviuapp:/app/serviuapp
+      - ./static:/app/static
+      - ./staticfiles:/app/staticfiles
+      - ./media:/app/media
+      - ./logs:/app/logs
+      - ./templates:/app/templates
+      - ./tmp:/app/tmp
+      - ./db.sqlite3:/app/db.sqlite3
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    # El comando ahora lo maneja docker-entrypoint.sh
+    command: gunicorn serviu.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+    networks:
+      - serviuapp_network
+
+  # -----------------------------------------------------------------
+  # Celery Worker (procesamiento de tareas asíncronas)
+  # -----------------------------------------------------------------
+  celery-worker:
+    build: .
+    container_name: serviuapp_celery_worker
+    restart: unless-stopped
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - USE_MYSQL=False
+      # --- APIs de IA (opcionales) ---
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - ./serviu:/app/serviu
+      - ./serviuapp:/app/serviuapp
+      - ./static:/app/static
+      - ./media:/app/media
+      - ./logs:/app/logs
+      - ./tmp:/app/tmp
+      - ./db.sqlite3:/app/db.sqlite3
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py wait_for_db --max-retries=30 --interval=2 &&
+             celery -A serviu worker -l INFO --concurrency=2 -Q imports,chat,default"
+    networks:
+      - serviuapp_network
+
+  # -----------------------------------------------------------------
+  # Celery Beat (tareas periódicas / scheduler)
+  # -----------------------------------------------------------------
+  celery-beat:
+    build: .
+    container_name: serviuapp_celery_beat
+    restart: unless-stopped
+    environment:
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - USE_MYSQL=False
+      # --- APIs de IA (opcionales, para tareas de chat en background) ---
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-mistral}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - ./serviu:/app/serviu
+      - ./serviuapp:/app/serviuapp
+      - ./logs:/app/logs
+      - ./db.sqlite3:/app/db.sqlite3
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py wait_for_db --max-retries=30 --interval=2 &&
+             celery -A serviu beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    networks:
+      - serviuapp_network
+
+# ===========================================
+# Volúmenes persistentes
+# ===========================================
+volumes:
+  redis_data:
+
+# ===========================================
+# Red interna
+# ===========================================
+networks:
+  serviuapp_network:
+    driver: bridge

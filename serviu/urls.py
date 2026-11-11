@@ -38,7 +38,8 @@ from django.http import HttpResponse
 
 from django.contrib.auth import views as auth_views
 
-from serviuapp.views import dashboard, filtros, BeneficiariosLista, Busqueda, actualizarBeneficiarios, anadirBeneficiario, actualizarBeneficiarioDecreto, actualizarBeneficiarioResolucion,logs_view,limpiar_logs, get_chart_data, ChatView, nlp_analytics_dashboard, api_analyze_text
+from serviuapp.views import dashboard, filtros, BeneficiariosLista, Busqueda, actualizarBeneficiarios, anadirBeneficiario, actualizarBeneficiarioDecreto, actualizarBeneficiarioResolucion, logs_view, limpiar_logs, get_chart_data, ChatView, nlp_analytics_dashboard, api_analyze_text
+from serviuapp.views_import import ImportExcelView, UploadAndImportView, ImportProgressView, CancelImportView
 
 
 
@@ -87,6 +88,12 @@ urlpatterns = [
     path('nlp-dashboard/', nlp_analytics_dashboard, name='nlp_dashboard'),
 
     path('api/analyze-text/', api_analyze_text, name='api_analyze_text'),
+
+    # Importación Excel con progreso en tiempo real
+    path('importar/', ImportExcelView.as_view(), name='importar_excel'),
+    path('importar/upload/', UploadAndImportView.as_view(), name='importar_excel_upload'),
+    path('importar/progress/<str:task_id>/', ImportProgressView.as_view(), name='importar_excel_progress'),
+    path('importar/cancel/<str:task_id>/', CancelImportView.as_view(), name='importar_excel_cancel'),
 
 ]
 

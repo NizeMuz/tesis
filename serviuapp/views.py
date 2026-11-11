@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views import View
+from django.utils.decorators import method_decorator
 from django.utils import timezone
 from .nlp_utils import nlp_analyzer
 import os
@@ -860,6 +861,7 @@ def anadirBeneficiario(request):
     
     return render(request, 'serviutemplate/anadirBeneficiario.html', data)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ChatView(View):
     def get(self, request):
         return JsonResponse({'error': 'Método no permitido'}, status=405)

@@ -840,9 +840,9 @@
                 console.log('Parámetros de filtro:', filterParams);
                 
                 // Construir URL para obtener datos del gráfico
-               const chartUrl = filterParams 
-                ? `/serviuapp/chart_data/${decreto}/?${filterParams}` 
-                : `/serviuapp/chart_data/${decreto}/`;
+               const chartUrl = filterParams
+                ? `/chart_data/${decreto}/?${filterParams}`
+                : `/chart_data/${decreto}/`;
                  console.log('URL del gráfico:', chartUrl);
                 
                 // Mostrar indicador de carga
@@ -966,10 +966,10 @@
                 const checkboxes = form.querySelectorAll('input[type="checkbox"]');
                 const checkedBoxes = form.querySelectorAll('input[type="checkbox"]:checked');
                 
-                // Si no hay checkboxes marcados, redirigir a home
+                // Si no hay checkboxes marcados, redirigir al dashboard (sin filtros)
                 if (checkedBoxes.length === 0) {
                     e.preventDefault();
-                    window.location.href = '/serviuapp/';
+                    window.location.href = '/';
                 }
             });
         });
